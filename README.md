@@ -9,24 +9,23 @@ provides through the Acer Care Center on Windows: a health mode that
 limits the battery charge to 80% with the goal of preserving your
 battery's capacity and a battery calibration mode which puts your
 battery through a controlled charge-discharge cycle to provide more
-accurate battery capacity estimates. It can also be used to read the
-battery temperature.
+accurate battery capacity estimates.
 
-The driver has been developed on an Acer Swift 3
-(SF314-34) laptop. Users have reported that it also works on other Acer laptops.
-A list of those models can be found [here](MODELS.md).
-Any feedback on how it works on Acer laptops not found on this list is appreciated.
+So far the driver has been reported to work on an Acer Swift 3
+(SF314-34), an [Acer Aspire 5 A515-45G-R5A1](https://github.com/linrunner/TLP/issues/596#issuecomment-1146784888),
+and an [Acer Enduro N3 Urban (EUN314A-51W)](https://github.com/frederik-h/acer-wmi-battery/issues/4).
+Any feedback on how it works on other Acer laptops would be appreciated.
 
 ## Building
 
 Make sure that you have the kernel headers for your kernel installed
-and type `make` in the cloned project directory. In more detail,
+and type `make KERNELVERSION=$(uname -r)` in the cloned project directory. In more detail,
 on a Debian or Ubuntu system, you can build by:
 ```
 sudo apt install build-essential linux-headers-$(uname -r) git
 git clone https://github.com/frederik-h/acer-wmi-battery.git
 cd acer-wmi-battery
-make
+make KERNELVERSION=$(uname -r)
 ```
 
 ## Using
@@ -60,6 +59,7 @@ can be started as follows:
 echo 1 | sudo tee /sys/bus/wmi/drivers/acer-wmi-battery/calibration_mode
 ```
 
+
 The calibration disables health mode and charges
 to 100%. Then it discharges and recharges the battery
 once. This can take a long time and for accurate
@@ -72,14 +72,38 @@ of the calibration is not yet handled by the module:
 echo 0 | sudo tee /sys/bus/wmi/drivers/acer-wmi-battery/calibration_mode
 ```
 
-### Battery Temperature
+## Persistent installation (DKMS)
 
-The temperature of the battery in millidegree Celsius can be read as follows:
+If you found this driver to be working on your laptop, you may want to install it into your system for ease of use.
+
+1) Install DKMS and generic kernel headers (this will always get you the latest headers), on Debian or Ubuntu it can be done with:
+
 ```
-cat /sys/bus/wmi/drivers/acer-wmi-battery/temperature
+sudo apt install dkms linux-headers-generic
 ```
 
-### Related work
+2) Install the driver: in the cloned project directory execute:
+
+```
+chmod +x install.sh uninstall.sh
+sudo ./install.sh
+```
+
+The driver will now automatically load at boot and be recompiled after a kernel upgrade. Reboot to use it.
+
+3) Enable Health mode and persist it
+```
+echo "options acer-wmi-battery enable_health_mode=1" | sudo tee /etc/modprobe.d/acer-wmi-battery.conf
+```
+
+### Uninstallation
+In the cloned project directory execute:
+
+```
+sudo ./uninstall.sh
+```
+
+## Related work
 
 There exists [another driver](https://github.com/maxco2/acer-battery-wmi) with
 similar functionality of which I have not been aware when starting the work
